@@ -2,7 +2,7 @@ import os
 import streamlit as st
 import pandas as pd
 from io import BytesIO
-from utils.processsing import extract_text_from_pdf, extract_text_from_doc
+from utils.processsing import get_data,process_data
 from utils.helper import set_job_description
 from model.job import job
 from data.info import software_positions, technology_stacks
@@ -60,8 +60,6 @@ with st.sidebar:
             value=0,
             step=1,
             label_visibility="collapsed",
-            # format="%d",
-            # help="Select the required experience in years",
         )
         
         #input field for Proficiency
@@ -84,67 +82,57 @@ with st.sidebar:
             use_container_width=True,
         )
         
+        
 #Description of the job on main screen
 markdown = generate_job_html(current_job)
-print(current_job)
+# print(current_job)
+
+
 with st.empty():
-    st.markdown(body = markdown, unsafe_allow_html=True)   
+    st.markdown(body = markdown, unsafe_allow_html=True) 
+    
+      
 #upload menu to upload a folder containing the resumes
 uploaded_folder = st.file_uploader("Upload a folder containing PDF or DOC/DOCX files", accept_multiple_files=True)
 
 
 
-'''
-Rest of the code goes here
-1. api calling the gemini api to process the text
-2. processing the data
-3. downloading the processed data
-4. displaying the processed data
-5. displaying the shortlisted resumes
-'''
+
     
     
 if uploaded_folder:
-    data = []
-
-    for uploaded_file in uploaded_folder:
-        file_name = uploaded_file.name
-        file_extension = os.path.splitext(file_name)[1].lower()
-
-        if file_extension == ".pdf":
-            text = extract_text_from_pdf(uploaded_file)
-        elif file_extension in [".doc", ".docx"]:
-            text = extract_text_from_doc(uploaded_file)
-        else:
-            st.warning(f"Unsupported file type: {file_name}")
-            continue
-
-        data.append({"File Name": file_name, "Extracted Text": text})
+    response = process_data(uploaded_folder,current_job)
+    
+    st.write(response)
+    
+    #work to be done next
+    #get the gemini api to work
+    #we need to display the response in a table format
+    #we need to add a download button to download the processed data
+    
+    
         
         
     #here the data contents the filename and the extracted raw text
     #we need to call the gemini api here to convert and process the text
-    
-    data = [{"File Name": "file1.pdf", "Extracted Text": "This is the extracted text from file1.pdf"}, {"File Name": "file2.docx", "Extracted Text": "This is the extracted text from file2.docx"}]
-    
 
-    if data:
-        # Create a DataFrame
-        df = pd.DataFrame(data)
+    # if data:
+    #     # Create a DataFrame
+    #     df = pd.DataFrame(data)
 
-        # Convert DataFrame to Excel
-        excel_file = BytesIO()
-        with pd.ExcelWriter(excel_file, engine="xlsxwriter") as writer:
-            df.to_excel(writer, index=False, sheet_name="Processed Data")
+    #     # Convert DataFrame to Excel
+    #     excel_file = BytesIO()
+    #     with pd.ExcelWriter(excel_file, engine="xlsxwriter") as writer:
+    #         df.to_excel(writer, index=False, sheet_name="Processed Data")
 
-        excel_file.seek(0)
+    #     excel_file.seek(0)
 
-        st.success("Processing complete! Download the Excel file below.")
-        st.download_button(
-            label="Download Excel File",
-            data=excel_file,
-            file_name="processed_data.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-    else:
-        st.warning("No valid files were processed.")
+    #     st.success("Processing complete! Download the Excel file below.")
+    #     st.download_button(
+    #         label="Download Excel File",
+    #         data=excel_file,
+    #         file_name="processed_data.xlsx",
+    #         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    #     )
+    # else:
+    #     st.warning("No valid files were processed.")
